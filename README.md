@@ -34,15 +34,12 @@ backend/              # Flask backend (API, scraping, summary generation)
   generate_summary.py # Summary generation using Gemini API
   chatbot.py          # Chat functionality
   test_chat.py        # Tests for chat functionality
-  cache/              # Cache directory for storing results
-  __pycache__/        # Python cache files
-  venv/               # Virtual environment
+  .env.example        # Environment variables example
 
 linkedin-analyzer/    # React frontend (user interface)
   src/                # React source code
   package.json        # Node.js dependencies and scripts
   package-lock.json   # Lock file for dependencies
-  node_modules/       # Installed Node.js modules
   requirements.txt    # Additional Python dependencies (if any)
   tailwind.config.js  # Tailwind CSS configuration
   tailwind.config.cjs # CommonJS Tailwind CSS configuration
