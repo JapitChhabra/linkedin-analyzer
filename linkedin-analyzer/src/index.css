@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-base-200 text-base-content;
+  }
+}
+
+@layer components {
+  .card {
+    @apply transition-all duration-300 hover:shadow-2xl;
+  }
+
+  .btn {
+    @apply transition-all duration-300;
+  }
+
+  .input {
+    @apply transition-all duration-300;
+  }
+
+  .loading {
+    @apply animate-spin;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-custom {
+    @apply scrollbar-thin scrollbar-thumb-primary scrollbar-track-base-200;
+  }
+}
+
+/* Toast customization */
+.toast {
+  @apply rounded-lg shadow-lg;
+}
+
+/* Chart customization */
+canvas {
+  @apply !w-full max-w-full;
+}
