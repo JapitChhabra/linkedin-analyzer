@@ -173,12 +173,7 @@ def main(profile_url=None, custom_prompt=None, summary_options=None):
     """Main function to orchestrate the scraping and summary generation process"""
     logger.info('Starting the summary generation process')
     
-    # Check for API key
-    if not os.getenv('GEMINI_API_KEY'):
-        logger.error('Please set your Gemini API key in the .env file')
-        print("Please set your Gemini API key in the .env file!")
-        return
-    
+    # Remove the environment variable check
     if not profile_url:
         logger.error('No profile URL provided')
         print("Error: No profile URL provided")
