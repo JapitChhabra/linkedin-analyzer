@@ -33,6 +33,7 @@ backend/              # Flask backend (API, scraping, summary generation)
   similarity_calculator.py # Similarity analysis logic
   generate_summary.py # Summary generation using Gemini API
   chatbot.py          # Chat functionality
+  credentials.py      # Credential management
   test_chat.py        # Tests for chat functionality
   .env.example        # Environment variables example
 
@@ -40,7 +41,6 @@ linkedin-analyzer/    # React frontend (user interface)
   src/                # React source code
   package.json        # Node.js dependencies and scripts
   package-lock.json   # Lock file for dependencies
-  requirements.txt    # Additional Python dependencies (if any)
   tailwind.config.js  # Tailwind CSS configuration
   tailwind.config.cjs # CommonJS Tailwind CSS configuration
   index.html          # Entry HTML file
@@ -76,13 +76,7 @@ linkedin-analyzer/    # React frontend (user interface)
    ```powershell
    pip install -r requirements.txt
    ```
-4. Set up your `.env` file with your Gemini API key:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   LINKEDIN_EMAIL=your_linkedintemp_email@example.com
-   LINKEDIN_PASSWORD=your_linkedintemp_password
-   ```
-5. Run the backend server:
+4. Run the backend server:
    ```powershell
    python app.py
    ```
@@ -105,13 +99,20 @@ linkedin-analyzer/    # React frontend (user interface)
 
 ## Usage
 - Access the frontend at [http://localhost:5173](http://localhost:5173) (default Vite port).
-- Enter a LinkedIn profile URL and (optionally) a custom prompt.
+- Click on the key icon in the top-right corner to input your credentials:
+  1. Enter your Gemini API Key
+  2. Enter your LinkedIn email
+  3. Enter your LinkedIn password
+- After saving credentials, enter a LinkedIn profile URL and (optionally) a custom prompt.
 - View the generated summary, similarity analysis, and chat with the AI about the profile.
 
 ---
 
 ## API Endpoints (Backend)
-- `POST /api/analyze-profile` — Analyze a LinkedIn profile (JSON: `{ url, customPrompt, summaryOptions }`)
+- `POST /api/analyze-profile` — Analyze a LinkedIn profile
+  - Request body: `{ url, customPrompt, summaryOptions }`
+- `POST /api/set-credentials` — Store LinkedIn and Gemini credentials
+  - Request body: `{ linkedin_email, linkedin_password, gemini_api_key }`
 - `POST /api/chat/init` — Start a chat session with summary context
 - `POST /api/chat/message` — Send a message in the chat
 - `POST /api/clear-cache` — Clear cached results
@@ -119,18 +120,7 @@ linkedin-analyzer/    # React frontend (user interface)
 
 ---
 
-## Environment Variables
-
-Before running the backend, create a `.env` file in the `backend` directory with the following variables:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-LINKEDIN_EMAIL=your_linkedintemp_email@example.com
-LINKEDIN_PASSWORD=your_linkedintemp_password
-```
-
 > **Security Note:**
 > - It is strongly recommended to use a LinkedIn account created with a temporary email address for scraping, rather than your personal or primary account. This helps protect your privacy and reduces risk of account restrictions.
 
 ---
-

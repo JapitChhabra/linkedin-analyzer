@@ -6,13 +6,18 @@ import { logger } from './utils/logger';
 import './App.css';
 import { Chart, registerables } from 'chart.js';
 import { Toaster, toast } from 'react-hot-toast';
-import { SunIcon, MoonIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { 
+  SunIcon, 
+  MoonIcon, 
+  ChatBubbleLeftRightIcon,
+  KeyIcon  // Add KeyIcon for credentials
+} from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import ChatDialog from './components/Chat/ChatDialog';
 
 Chart.register(...registerables);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://linkedin-analyzer-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -31,12 +36,159 @@ const queryClient = new QueryClient({
   },
 });
 
-const Navbar = ({ theme, toggleTheme, onChatClick, isChatEnabled }) => (
+// New Credentials Modal Component
+const CredentialsModal = ({ isOpen, onClose, onSave }) => {
+  const [credentials, setCredentials] = useState({
+    geminiApiKey: '',
+    linkedinEmail: '',
+    linkedinPassword: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!credentials.geminiApiKey || !credentials.linkedinEmail || !credentials.linkedinPassword) {
+      toast.error('Please fill in all credential fields');
+      return;
+    }
+
+    try {
+      // Send credentials to backend
+      const response = await api.post('/set-credentials', {
+        linkedin_email: credentials.linkedinEmail,
+        linkedin_password: credentials.linkedinPassword,
+        gemini_api_key: credentials.geminiApiKey
+      });
+
+      // Also save to localStorage as a backup
+      localStorage.setItem('geminiApiKey', credentials.geminiApiKey);
+      localStorage.setItem('linkedinCredentials', JSON.stringify({
+        email: credentials.linkedinEmail,
+        password: credentials.linkedinPassword
+      }));
+
+      // Notify user of successful save
+      toast.success(response.data.message || 'Credentials saved successfully');
+
+      // Close the modal
+      onClose();
+    } catch (error) {
+      // Handle any errors from the API
+      const errorMessage = error.response?.data?.message || 'Failed to save credentials';
+      toast.error(errorMessage);
+      console.error('Credentials save error:', error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4 text-primary">
+            Configure Credentials
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Gemini API Key</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter Gemini API Key"
+                className="input input-bordered w-full"
+                value={credentials.geminiApiKey}
+                onChange={(e) => setCredentials(prev => ({
+                  ...prev, 
+                  geminiApiKey: e.target.value
+                }))}
+                required
+              />
+            </div>
+            
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">LinkedIn Email</span>
+              </label>
+              <input
+                type="email"
+                placeholder="Enter LinkedIn Email"
+                className="input input-bordered w-full"
+                value={credentials.linkedinEmail}
+                onChange={(e) => setCredentials(prev => ({
+                  ...prev, 
+                  linkedinEmail: e.target.value
+                }))}
+                required
+              />
+            </div>
+            
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">LinkedIn Password</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Enter LinkedIn Password"
+                className="input input-bordered w-full"
+                value={credentials.linkedinPassword}
+                onChange={(e) => setCredentials(prev => ({
+                  ...prev, 
+                  linkedinPassword: e.target.value
+                }))}
+                required
+              />
+            </div>
+            
+            <div className="alert alert-warning shadow-lg mt-4">
+              <div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span>
+                  It is strongly recommended to use a LinkedIn account created with a temporary email address for scraping, rather than your personal or primary account. This helps protect your privacy and reduces risk of account restrictions.
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <button 
+                type="button" 
+                className="btn btn-ghost"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="btn btn-primary"
+              >
+                Save Credentials
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modify Navbar to include Credentials Button
+const Navbar = ({ theme, toggleTheme, onChatClick, isChatEnabled, onCredentialsClick }) => (
   <div className="navbar bg-base-100 shadow-lg px-4 sm:px-8">
     <div className="flex-1">
       <h1 className="text-2xl font-bold text-primary">EasyRecruit</h1>
     </div>
     <div className="flex-none space-x-2">
+      {/* Add Credentials Button */}
+      <button 
+        className="btn btn-ghost btn-circle"
+        onClick={onCredentialsClick}
+        aria-label="Open Credentials"
+      >
+        <KeyIcon className="h-6 w-6" />
+      </button>
+
       {isChatEnabled && (
         <button 
           className="btn btn-ghost btn-circle"
@@ -245,6 +397,7 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [chatState, setChatState] = useState({
     messages: [],
     sessionId: null,
@@ -306,6 +459,14 @@ function App() {
     setChatState(newState);
   };
 
+  const handleCredentialsClick = () => {
+    setIsCredentialsModalOpen(true);
+  };
+
+  const handleCredentialsClose = () => {
+    setIsCredentialsModalOpen(false);
+  };
+
   return (
     <ErrorBoundary
       FallbackComponent={({ error, resetErrorBoundary }) => (
@@ -328,6 +489,7 @@ function App() {
               toggleTheme={toggleTheme} 
               onChatClick={handleChatOpen}
               isChatEnabled={!!analysisResult}
+              onCredentialsClick={handleCredentialsClick}
             />
             <main className="container mx-auto px-4 py-8">
               <div className="max-w-6xl mx-auto">
@@ -397,6 +559,12 @@ function App() {
               rawData={analysisResult?.raw_data || ''}
               chatState={chatState}
               onChatStateUpdate={handleChatStateUpdate}
+            />
+
+            {/* Credentials Modal */}
+            <CredentialsModal 
+              isOpen={isCredentialsModalOpen}
+              onClose={handleCredentialsClose}
             />
           </div>
           <Toaster 

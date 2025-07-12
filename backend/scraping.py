@@ -4,11 +4,9 @@ import logging
 import os
 from dotenv import load_dotenv
 
-# Constants for LinkedIn login
+# Use credentials from credentials module
+from credentials import get_linkedin_credentials
 
-load_dotenv()
-EMAIL = os.getenv("LINKEDIN_EMAIL")
-PASSWORD = os.getenv("LINKEDIN_PASSWORD")
 POSTS_CAP = 15  # Maximum number of posts to scrape
 
 logger = logging.getLogger(__name__)
@@ -181,6 +179,20 @@ def main(profile_url=None):
     if not profile_url:
         logger.error('No profile URL provided')
         return None
+    
+    # Get LinkedIn credentials
+    linkedin_email, linkedin_password = get_linkedin_credentials()
+    
+    # Detailed logging for credentials
+    logger.info(f'Attempting to scrape profile. Email provided: {bool(linkedin_email)}')
+    logger.info(f'Password provided: {bool(linkedin_password)}')
+    
+    # Check if credentials are set
+    if not linkedin_email or not linkedin_password:
+        logger.error('LinkedIn credentials not set')
+        logger.error(f'Actual email value: {linkedin_email}')
+        logger.error(f'Actual password value: {"*" if linkedin_password else "None"}')
+        return None
         
     logger.info('Starting LinkedIn scraping process')
     try:
@@ -194,8 +206,8 @@ def main(profile_url=None):
 
             # Fill login form and submit
             logger.info('Attempting to log in')
-            page.fill("input[name='session_key']", EMAIL)
-            page.fill("input[name='session_password']", PASSWORD)
+            page.fill("input[name='session_key']", linkedin_email)
+            page.fill("input[name='session_password']", linkedin_password)
             page.click("button[type='submit']")
 
             # Wait for page load
@@ -235,7 +247,7 @@ def main(profile_url=None):
                 'posts': posts
             }
     except Exception as e:
-        logger.error(f'Error in main scraping process: {str(e)}')
+        logger.error(f'Error during LinkedIn scraping: {str(e)}')
         return None
 
 if __name__ == "__main__":

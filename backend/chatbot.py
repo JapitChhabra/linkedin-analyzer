@@ -5,8 +5,8 @@ import logging
 import requests
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Import Gemini API key from credentials module
+from credentials import get_gemini_api_key
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -61,9 +61,11 @@ class ChatSession:
     def _get_gemini_response(self, history: List[Dict[str, List[str]]]) -> str:
         """Get response from Gemini API using the same approach as generate_summary.py."""
         try:
-            api_key = os.getenv('GEMINI_API_KEY')
+            # Get Gemini API key
+            api_key = get_gemini_api_key()
+            
             if not api_key:
-                logger.error('Gemini API key not found in environment variables')
+                logger.error('Gemini API key not set')
                 return "Error: Gemini API key not configured"
 
             headers = {
@@ -80,7 +82,7 @@ class ChatSession:
                 ]
             }
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
             
             logger.info('Sending request to Gemini API')
             response = requests.post(url, headers=headers, json=payload)

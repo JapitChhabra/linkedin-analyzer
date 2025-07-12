@@ -13,6 +13,13 @@ import pathlib
 import uuid
 from chatbot import chat_manager
 from similarity_calculator import SimilarityCalculator
+import requests
+from credentials import (
+    set_linkedin_credentials, 
+    set_gemini_api_key, 
+    get_linkedin_credentials, 
+    get_gemini_api_key
+)
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +35,45 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+# More verbose CORS configuration
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:5173",  # Vite dev server
+            "http://127.0.0.1:5173",
+            "http://localhost:5000",  # Flask server
+            "http://127.0.0.1:5000"
+        ],
+        "allow_headers": [
+            "Content-Type", 
+            "X-Requested-With",
+            "Authorization", 
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Headers",
+            "Access-Control-Allow-Credentials"
+        ],
+        "supports_credentials": True,
+        "methods": ["GET", "POST", "OPTIONS"]
+    }
+})
+
+# Add a catch-all logging middleware
+@app.before_request
+def log_request_info():
+    app.logger.info('Request Headers: %s', request.headers)
+    app.logger.info('Request Method: %s', request.method)
+    app.logger.info('Request URL: %s', request.url)
+    if request.get_data():
+        app.logger.info('Request Data: %s', request.get_data())
+
+# Explicit OPTIONS handler
+@app.route('/api/set-credentials', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({'status': 'success'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'POST,GET,OPTIONS')
+    return response
 
 # File-based cache configuration
 CACHE_DIR = pathlib.Path('cache')
@@ -241,6 +286,39 @@ def chat_message():
     except Exception as e:
         logger.error(f'Error in chat message exchange: {str(e)}')
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/set-credentials', methods=['POST'])
+def set_credentials():
+    """Set credentials without validation"""
+    try:
+        data = request.json
+        
+        # Extract credentials
+        linkedin_email = data.get('linkedin_email')
+        linkedin_password = data.get('linkedin_password')
+        gemini_api_key = data.get('gemini_api_key')
+        
+        # Validate inputs
+        if not all([linkedin_email, linkedin_password, gemini_api_key]):
+            return jsonify({
+                'status': 'error', 
+                'message': 'All credentials are required'
+            }), 400
+        
+        # Simply store credentials
+        set_linkedin_credentials(linkedin_email, linkedin_password)
+        set_gemini_api_key(gemini_api_key)
+        
+        return jsonify({
+            'status': 'success', 
+            'message': 'Credentials stored successfully'
+        }), 200
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error', 
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     logger.info('Starting Flask application')

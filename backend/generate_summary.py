@@ -8,8 +8,8 @@ import logging
 from datetime import datetime
 from scraping import main as scrape_linkedin
 
-# Load environment variables
-load_dotenv()
+# Import Gemini API key from credentials module
+from credentials import get_gemini_api_key
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -70,9 +70,11 @@ def generate_summary(linkedin_data, custom_prompt=None, summary_options=None):
     """Generate a summary using Gemini API"""
     logger.info('Starting summary generation')
     try:
-        api_key = os.getenv('GEMINI_API_KEY')
+        # Get Gemini API key
+        api_key = get_gemini_api_key()
+        
         if not api_key:
-            logger.error('Gemini API key not found in environment variables')
+            logger.error('Gemini API key not set')
             return "Error: Gemini API key not configured"
 
         # Default prompt template
