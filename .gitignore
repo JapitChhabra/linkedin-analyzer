@@ -52,3 +52,5 @@ scraping.txt
 scrapingg.txt
 testing/
 start.txt
+# Local Netlify folder
+.netlify
