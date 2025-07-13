@@ -3,7 +3,6 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import logging
 import requests
-from dotenv import load_dotenv
 
 # Import Gemini API key from credentials module
 from credentials import get_gemini_api_key
