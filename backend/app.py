@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from generate_summary import main as generate_summary_main
 import os
-from dotenv import load_dotenv
 import time
 from functools import wraps
 import logging
@@ -31,8 +30,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 app = Flask(__name__)
 # More verbose CORS configuration

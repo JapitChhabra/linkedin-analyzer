@@ -1,7 +1,6 @@
 import requests
 import json
 import os
-from dotenv import load_dotenv
 import sys
 from io import StringIO
 import logging
