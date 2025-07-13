@@ -17,7 +17,7 @@ import ChatDialog from './components/Chat/ChatDialog';
 
 Chart.register(...registerables);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://linkedin-analyzer-backend.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
