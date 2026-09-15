@@ -1,8 +1,8 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
-import axios from 'axios';
 import { logger } from './utils/logger';
+import { api, API_BASE_URL } from './utils/api';
 import './App.css';
 import { Chart, registerables } from 'chart.js';
 import { Toaster, toast } from 'react-hot-toast';
@@ -16,12 +16,6 @@ import ReactMarkdown from 'react-markdown';
 import ChatDialog from './components/Chat/ChatDialog';
 
 Chart.register(...registerables);
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {

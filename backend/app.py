@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from generate_summary import main as generate_summary_main
 import os
+import re
 import time
 from functools import wraps
 import logging
@@ -32,45 +33,86 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# More verbose CORS configuration
+# Allowed origins for CORS
+allowed_origins = [
+    "https://easy-recruit-ai.netlify.app",
+    "https://easyrecruit-ai.netlify.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    re.compile(r"^https:\/\/[a-zA-Z0-9-]+\.netlify\.app$"),
+    re.compile(r"^https:\/\/[a-zA-Z0-9-]+\.onrender\.com$")
+]
+
+# Additional origins from environment variables if specified
+frontend_env = os.environ.get('FRONTEND_URL')
+if frontend_env:
+    for url in frontend_env.split(','):
+        cleaned = url.strip().rstrip('/')
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
+allowed_origins_env = os.environ.get('ALLOWED_ORIGINS')
+if allowed_origins_env:
+    for url in allowed_origins_env.split(','):
+        cleaned = url.strip().rstrip('/')
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
+# CORS configuration
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "http://localhost:5173",  # Vite dev server
-            "http://127.0.0.1:5173",
-            "http://localhost:5000",  # Flask server
-            "http://127.0.0.1:5000",
-            "https://easyrecruit-ai.netlify.app"
-        ],
+        "origins": allowed_origins,
         "allow_headers": [
             "Content-Type", 
             "X-Requested-With",
             "Authorization", 
             "Access-Control-Allow-Origin",
             "Access-Control-Allow-Headers",
-            "Access-Control-Allow-Credentials"
+            "Access-Control-Allow-Credentials",
+            "Accept",
+            "Origin"
+        ],
+        "expose_headers": [
+            "Content-Type",
+            "Authorization"
         ],
         "supports_credentials": True,
-        "methods": ["GET", "POST", "OPTIONS"]
+        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
     }
 })
 
-# Add a catch-all logging middleware
+def is_origin_allowed(origin):
+    if not origin:
+        return False
+    for pattern in allowed_origins:
+        if hasattr(pattern, 'match'):
+            if pattern.match(origin):
+                return True
+        elif pattern == origin or pattern == origin.rstrip('/'):
+            return True
+    return False
+
+# Logging and preflight middleware
 @app.before_request
-def log_request_info():
+def handle_before_request():
     app.logger.info('Request Headers: %s', request.headers)
     app.logger.info('Request Method: %s', request.method)
     app.logger.info('Request URL: %s', request.url)
     if request.get_data():
         app.logger.info('Request Data: %s', request.get_data())
 
-# Explicit OPTIONS handler
-@app.route('/api/set-credentials', methods=['OPTIONS'])
-def handle_options():
-    response = jsonify({'status': 'success'})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'POST,GET,OPTIONS')
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get('Origin')
+    if origin and is_origin_allowed(origin):
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
     return response
 
 # File-based cache configuration
@@ -131,12 +173,23 @@ def rate_limit(limit_seconds=60):
         return wrapped
     return decorator
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint for status check"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'LinkedIn Analyzer API is running',
+        'frontend': 'https://easy-recruit-ai.netlify.app'
+    })
+
+@app.route('/health', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     logger.info('Health check endpoint called')
     return jsonify({'status': 'healthy'})
 
+@app.route('/analyze-profile', methods=['POST'])
 @app.route('/api/analyze-profile', methods=['POST'])
 def analyze_profile():
     try:
@@ -211,6 +264,7 @@ def analyze_profile():
             sys.stdout = old_stdout  # Ensure stdout is restored in case of error
         return jsonify({'error': str(e)}), 500
 
+@app.route('/clear-cache', methods=['POST'])
 @app.route('/api/clear-cache', methods=['POST'])
 def clear_cache():
     """Clear the cache directory"""
@@ -223,6 +277,7 @@ def clear_cache():
         logger.error(f'Error clearing cache: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+@app.route('/chat/init', methods=['POST'])
 @app.route('/api/chat/init', methods=['POST'])
 def init_chat():
     """Initialize a new chat session with the summary context."""
@@ -258,6 +313,7 @@ def init_chat():
         logger.error(f'Error initializing chat session: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+@app.route('/chat/message', methods=['POST'])
 @app.route('/api/chat/message', methods=['POST'])
 def chat_message():
     """Handle chat message exchange."""
@@ -285,9 +341,13 @@ def chat_message():
         logger.error(f'Error in chat message exchange: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/set-credentials', methods=['POST'])
+@app.route('/set-credentials', methods=['POST', 'OPTIONS'])
+@app.route('/api/set-credentials', methods=['POST', 'OPTIONS'])
 def set_credentials():
     """Set credentials without validation"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'success'}), 200
+
     try:
         data = request.json
         
@@ -320,4 +380,6 @@ def set_credentials():
 
 if __name__ == '__main__':
     logger.info('Starting Flask application')
-    app.run(debug=True, port=5000) 
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1')
+    app.run(host='0.0.0.0', port=port, debug=debug) 

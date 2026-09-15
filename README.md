@@ -97,8 +97,14 @@ linkedin-analyzer/    # React frontend (user interface)
 
 ---
 
+## Deployments
+- **Frontend (Netlify):** [https://easy-recruit-ai.netlify.app/](https://easy-recruit-ai.netlify.app/)
+- **Backend (Render):** [https://linkedin-analyzer-4.onrender.com/](https://linkedin-analyzer-4.onrender.com/)
+
+---
+
 ## Usage
-- Access the frontend at [http://localhost:5173](http://localhost:5173) (default Vite port).
+- Access the frontend at [http://localhost:5173](http://localhost:5173) (local) or [https://easy-recruit-ai.netlify.app/](https://easy-recruit-ai.netlify.app/) (production).
 - Click on the key icon in the top-right corner to input your credentials:
   1. Enter your Gemini API Key
   2. Enter your LinkedIn email

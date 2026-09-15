@@ -15,8 +15,11 @@ def print_response(prefix: str, text: str):
     print("-" * 50)
 
 def test_chat():
-    # Base URL for the API
-    base_url = 'http://localhost:5000'
+    # Base URL for the API (defaults to local server, or Render backend if USE_PROD=1)
+    base_url = os.environ.get(
+        'BACKEND_URL',
+        'https://linkedin-analyzer-4.onrender.com' if os.environ.get('USE_PROD') else 'http://localhost:5000'
+    ).rstrip('/')
     
     # Test data
     test_summary = """

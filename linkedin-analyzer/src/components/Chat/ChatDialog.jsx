@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+import { api, API_BASE_URL } from '../../utils/api';
 
 const ChatMessage = ({ message, isAI }) => (
   <div className={`flex ${isAI ? 'justify-start' : 'justify-end'} mb-4`}>
